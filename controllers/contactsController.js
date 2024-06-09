@@ -1,9 +1,8 @@
-const { readContacts, writeContacts } = require('../models/contactsModel');
-const { v4: uuidv4 } = require('uuid');
+const Contact = require('../models/contactsModel');
 
 const listContacts = async (req, res) => {
   try {
-    const contacts = await readContacts();
+    const contacts = await Contact.find({});
     res.status(200).json(contacts);
   } catch (error) {
     res.status(500).json({ message: 'Error reading contacts' });
@@ -13,8 +12,7 @@ const listContacts = async (req, res) => {
 const getById = async (req, res) => {
   const { id } = req.params;
   try {
-    const contacts = await readContacts();
-    const contact = contacts.find((contact) => contact.id === id);
+    const contact = await Contact.findById(id);
     if (contact) {
       res.status(200).json(contact);
     } else {
@@ -27,16 +25,13 @@ const getById = async (req, res) => {
 
 const addContact = async (req, res) => {
   const { name, email, phone } = req.body;
-  const contacts = await readContacts();
-  const existingContact = contacts.find(contact => contact.name === name);
-  if (existingContact) {
-    return res.status(400).json({ message: 'Contact with this name already exists' });
-  }
-  const newContact = { id: uuidv4(), name, email, phone };
   try {
-    const contacts = await readContacts();
-    contacts.push(newContact);
-    await writeContacts(contacts);
+    const existingContact = await Contact.findOne({ name });
+    if (existingContact) {
+      return res.status(400).json({ message: 'Contact with this name already exists' });
+    }
+    const newContact = new Contact({ name, email, phone });
+    await newContact.save();
     res.status(201).json(newContact);
   } catch (error) {
     res.status(500).json({ message: 'Error adding contact' });
@@ -46,10 +41,8 @@ const addContact = async (req, res) => {
 const removeContact = async (req, res) => {
   const { id } = req.params;
   try {
-    const contacts = await readContacts();
-    const updatedContacts = contacts.filter((contact) => contact.id !== id);
-    if (updatedContacts.length !== contacts.length) {
-      await writeContacts(updatedContacts);
+    const deletedContact = await Contact.findByIdAndDelete(id);
+    if (deletedContact) {
       res.status(200).json({ message: 'Contact deleted' });
     } else {
       res.status(404).json({ message: 'Not found' });
@@ -66,14 +59,13 @@ const updateContact = async (req, res) => {
     return res.status(400).json({ message: 'Missing fields' });
   }
   try {
-    const contacts = await readContacts();
-    const index = contacts.findIndex((contact) => contact.id === id);
-    if (index !== -1) {
-      if (name) contacts[index].name = name;
-      if (email) contacts[index].email = email;
-      if (phone) contacts[index].phone = phone;
-      await writeContacts(contacts);
-      res.status(200).json(contacts[index]);
+    const updatedContact = await Contact.findByIdAndUpdate(
+      id, 
+      { name, email, phone }, 
+      { new: true }
+    );
+    if (updatedContact) {
+      res.status(200).json(updatedContact);
     } else {
       res.status(404).json({ message: 'Not found' });
     }
@@ -82,10 +74,36 @@ const updateContact = async (req, res) => {
   }
 };
 
+const updateStatusContact = async (req, res) => {
+  const { contactId } = req.params;
+  const { favorite } = req.body;
+
+  if (favorite === undefined) {
+    return res.status(400).json({ message: 'missing field favorite' });
+  }
+
+  try {
+    const updatedContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { favorite },
+      { new: true }
+    );
+
+    if (updatedContact) {
+      return res.status(200).json(updatedContact);
+    } else {
+      return res.status(404).json({ message: 'Not found' });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = { 
   listContacts, 
   getById, 
   addContact, 
   removeContact, 
-  updateContact 
+  updateContact,
+  updateStatusContact 
 };
