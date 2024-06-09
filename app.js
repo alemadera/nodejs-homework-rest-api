@@ -1,7 +1,8 @@
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
-
+const dotenv = require('dotenv');
+dotenv.config();
 const contactsRouter = require('./routes/api/contactsRoutes')
 
 const app = express()
@@ -23,3 +24,6 @@ app.use((err, req, res, next) => {
 })
 
 module.exports = app
+// token mongodb = uOK8aqvThczs6gMj
+// mongodb+srv://alemadera:uOK8aqvThczs6gMj@cluster0.l1n1pem.mongodb.net/
+// 

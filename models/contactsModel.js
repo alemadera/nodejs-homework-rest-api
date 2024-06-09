@@ -1,18 +1,22 @@
-const fs = require('fs').promises;
-const path = require ('path');
+const mongoose = require('mongoose');
 
-const contactsPath = path.join(__dirname,'contacts.json');
+const contactSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Set name for contact'],
+  },
+  email: {
+    type: String,
+  },
+  phone: {
+    type: String,
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+});
 
-const readContacts = async () => {
-  const data = await fs.readFile(contactsPath, 'utf-8');
-  return JSON.parse(data);
-}
+const Contact = mongoose.model('Contact', contactSchema);
 
-const writeContacts = async (contacts) => {
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-}
-
-module.exports = {
-  readContacts,
-  writeContacts,
-}
+module.exports = Contact;
